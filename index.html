@@ -1,0 +1,1467 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Mẫu Bê Tông</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef6ff',
+                            100: '#e0edff',
+                            500: '#1a73e8',
+                            600: '#0052cc',
+                            700: '#0041a3',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #999;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen pb-20 md:pb-6">
+
+    <!-- Compact Header -->
+    <header class="bg-brand-600 text-white sticky top-0 z-30 shadow-sm">
+        <div class="max-w-4xl mx-auto px-3 py-1.5 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="w-7 h-7 bg-yellow-400 rounded-md flex items-center justify-center text-slate-900 font-bold text-sm shadow-sm">
+                    <i class="fa-solid fa-cubes text-slate-900"></i>
+                </div>
+                <h1 class="font-bold text-base leading-tight">Quản Lý Mẫu Bê Tông</h1>
+            </div>
+
+            <!-- Backup/Restore -->
+            <div class="relative inline-block text-left">
+                <button onclick="toggleBackupMenu()" class="bg-brand-700 hover:bg-brand-800 text-white px-2.5 py-1 rounded-lg text-xs font-medium flex items-center gap-1.5 transition">
+                    <i class="fa-solid fa-floppy-disk"></i>
+                    <span>Sao lưu</span>
+                    <i class="fa-solid fa-chevron-down text-[10px]"></i>
+                </button>
+                <div id="backupMenu" class="hidden absolute right-0 mt-1.5 w-44 bg-white rounded-xl shadow-xl border border-slate-200 py-1 text-slate-700 z-50 text-xs">
+                    <button onclick="exportJSONData()" class="w-full text-left px-3 py-2 hover:bg-slate-100 flex items-center gap-2">
+                        <i class="fa-solid fa-download text-brand-600"></i> Xuất dữ liệu (JSON)
+                    </button>
+                    <label class="w-full text-left px-3 py-2 hover:bg-slate-100 flex items-center gap-2 cursor-pointer">
+                        <i class="fa-solid fa-upload text-emerald-600"></i> Nhập dữ liệu (JSON)
+                        <input type="file" id="importJsonInput" accept=".json" class="hidden" onchange="importJSONData(event)">
+                    </label>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-4xl mx-auto px-3 sm:px-4 pt-3">
+
+        <!-- ========================================== -->
+        <!-- TAB 1: TRANG CHÍNH & LỊCH -->
+        <!-- ========================================== -->
+        <div id="page1" class="space-y-4">
+            <!-- Calendar Card -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80">
+                <div class="flex items-center justify-between mb-4 px-2">
+                    <button onclick="changeMonth(-1)" class="w-9 h-9 rounded-full flex items-center justify-center hover:bg-slate-100 text-slate-600 transition">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+                    <h2 id="calendarMonthYear" class="text-lg font-bold text-slate-800">Tháng 10/2026</h2>
+                    <button onclick="changeMonth(1)" class="w-9 h-9 rounded-full flex items-center justify-center hover:bg-slate-100 text-slate-600 transition">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-7 text-center font-semibold text-xs text-slate-400 mb-2">
+                    <div>T2</div><div>T3</div><div>T4</div><div>T5</div><div>T6</div><div>T7</div><div>CN</div>
+                </div>
+
+                <div id="calendarGrid" class="grid grid-cols-7 gap-y-1 text-center text-sm"></div>
+
+                <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-center gap-4 text-xs text-slate-500">
+                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span> Mẫu lấy</span>
+                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span> Lịch nén R7</span>
+                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-purple-500 inline-block"></span> Lịch nén R28</span>
+                </div>
+            </div>
+
+            <!-- Selected Date Info Banner -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 space-y-3">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <span class="text-xs uppercase tracking-wider font-semibold text-brand-600">NGÀY ĐANG CHỌN</span>
+                        <h3 id="selectedDateText" class="text-xl font-bold text-slate-900">--</h3>
+                    </div>
+                    <button onclick="openAddSampleModal()" class="bg-brand-600 hover:bg-brand-700 text-white font-medium px-4 py-2.5 rounded-xl shadow-md flex items-center justify-center gap-2 transition active:scale-95">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>+ Lấy mẫu</span>
+                    </button>
+                </div>
+
+                <button onclick="exportQuickDayCSV()" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-medium p-3 rounded-xl shadow-sm flex items-center justify-between transition">
+                    <div class="flex items-center gap-2.5 text-left">
+                        <i class="fa-solid fa-file-csv text-2xl"></i>
+                        <span class="text-sm">Xuất file CSV báo cáo nén mẫu cho ngày</span>
+                    </div>
+                    <span id="quickExportDateBadge" class="bg-emerald-800 px-2.5 py-1 rounded-lg text-xs font-semibold">--/--/----</span>
+                </button>
+            </div>
+
+            <!-- Segmented Tabs -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+                <div class="p-3 bg-slate-50/50 border-b border-slate-100">
+                    <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                        <i class="fa-regular fa-clock"></i> Hoạt động ngày này
+                    </h4>
+                    
+                    <div class="grid grid-cols-2 gap-1 bg-slate-200/70 p-1 rounded-xl">
+                        <button id="tabSeg1" onclick="switchDayTab('taken')" class="py-2 px-3 text-xs sm:text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 bg-white text-brand-600 shadow-sm">
+                            <span>MẪU LẤY VÀO NGÀY NÀY</span>
+                            <span id="badgeCountTaken" class="bg-brand-100 text-brand-700 text-xs px-2 py-0.5 rounded-full">0</span>
+                        </button>
+                        <button id="tabSeg2" onclick="switchDayTab('schedule')" class="py-2 px-3 text-xs sm:text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 text-slate-600 hover:text-slate-900">
+                            <span>LỊCH NÉN (R7 / R28) NGÀY NÀY</span>
+                            <span id="badgeCountSchedule" class="bg-slate-200 text-slate-700 text-xs px-2 py-0.5 rounded-full">0</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="dayTabTakenContent" class="p-4">
+                    <div id="dayTakenList" class="space-y-4"></div>
+                </div>
+
+                <div id="dayTabScheduleContent" class="p-4 hidden">
+                    <div id="dayScheduleList" class="space-y-4"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAB 2: QUẢN LÝ MẪU & LỊCH NÉN -->
+        <!-- ========================================== -->
+        <div id="page2" class="space-y-4 hidden">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80">
+                <div class="flex items-center justify-between">
+                    <h2 class="font-bold text-slate-800 text-base">Danh Sách Mẫu & Lịch Nén</h2>
+                    <button onclick="toggleMasterDataModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 rounded-xl transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-gear text-slate-500"></i>
+                        <span>Quản lý Công ty & Mác</span>
+                    </button>
+                </div>
+
+                <div class="flex border-b border-slate-200 mt-4">
+                    <button id="p2SubTab1" onclick="switchPage2SubTab('samples')" class="pb-2 px-4 font-semibold text-sm border-b-2 border-brand-600 text-brand-600">
+                        <i class="fa-solid fa-vials mr-1.5"></i> Danh sách tất cả mẫu
+                    </button>
+                    <button id="p2SubTab2" onclick="switchPage2SubTab('schedules')" class="pb-2 px-4 font-semibold text-sm text-slate-500 hover:text-slate-700 border-b-2 border-transparent">
+                        <i class="fa-solid fa-calendar-check mr-1.5"></i> Tất cả Lịch Nén
+                    </button>
+                </div>
+            </div>
+
+            <!-- Page 2 Sub Content 1: ALL SAMPLES -->
+            <div id="p2SamplesSection" class="space-y-4">
+                <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200/80 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs font-semibold text-slate-500 mb-1 block">Lọc theo Công ty</label>
+                        <select id="p2FilterCompany" onchange="renderPage2Samples()" class="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                            <option value="">-- Tất cả Công ty --</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-slate-500 mb-1 block">Lọc theo Ngày lấy mẫu</label>
+                        <input type="date" id="p2FilterTakenDate" onchange="renderPage2Samples()" class="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                </div>
+
+                <div id="p2SamplesContainer" class="space-y-4"></div>
+
+                <div id="p2SamplesLoadMore" class="text-center pt-2 hidden">
+                    <button onclick="loadMoreP2Samples()" class="bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-semibold px-5 py-2.5 rounded-xl text-sm shadow-sm transition">
+                        Xem thêm mẫu cũ hơn...
+                    </button>
+                </div>
+            </div>
+
+            <!-- Page 2 Sub Content 2: ALL SCHEDULES -->
+            <div id="p2SchedulesSection" class="space-y-4 hidden">
+                <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200/80 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                        <label class="text-xs font-semibold text-slate-500 mb-1 block">Lọc theo Công ty</label>
+                        <select id="p2SchedFilterCompany" onchange="renderPage2Schedules()" class="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                            <option value="">-- Tất cả Công ty --</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-slate-500 mb-1 block">Lọc theo Ngày nén</label>
+                        <input type="date" id="p2SchedFilterCompressDate" onchange="renderPage2Schedules()" class="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-slate-500 mb-1 block">Lọc theo Ngày lấy</label>
+                        <input type="date" id="p2SchedFilterTakenDate" onchange="renderPage2Schedules()" class="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                </div>
+
+                <div id="p2SchedulesContainer" class="space-y-4"></div>
+
+                <div id="p2SchedulesLoadMore" class="text-center pt-2 hidden">
+                    <button onclick="loadMoreP2Schedules()" class="bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-semibold px-5 py-2.5 rounded-xl text-sm shadow-sm transition">
+                        Xem thêm lịch nén cũ hơn...
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAB 3: XUẤT BÁO CÁO CSV -->
+        <!-- ========================================== -->
+        <div id="page3" class="space-y-4 hidden">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80">
+                <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2">
+                    <i class="fa-solid fa-file-csv text-emerald-600"></i> Xuất Báo Cáo File CSV
+                </h2>
+            </div>
+
+            <!-- Export Type 1 -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 space-y-4">
+                <div class="border-b border-slate-100 pb-3">
+                    <span class="bg-brand-50 text-brand-700 font-bold text-xs px-2.5 py-1 rounded-md">LOẠI 1</span>
+                    <h3 class="font-bold text-slate-800 text-base mt-1">Lịch Nén Mẫu Trong Khoảng Thời Gian</h3>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs font-semibold text-slate-600 mb-1 block">Từ ngày nén</label>
+                        <input type="date" id="exp1StartDate" class="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-slate-600 mb-1 block">Đến ngày nén</label>
+                        <input type="date" id="exp1EndDate" class="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                </div>
+
+                <button onclick="executeExportType1()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-4 rounded-xl shadow-md flex items-center justify-center gap-2 transition active:scale-98">
+                    <i class="fa-solid fa-file-excel text-lg"></i>
+                    <span>Tải Báo Cáo Lịch Nén (.CSV)</span>
+                </button>
+            </div>
+
+            <!-- Export Type 2 -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 space-y-4">
+                <div class="border-b border-slate-100 pb-3">
+                    <span class="bg-purple-50 text-purple-700 font-bold text-xs px-2.5 py-1 rounded-md">LOẠI 2</span>
+                    <h3 class="font-bold text-slate-800 text-base mt-1">Danh Sách Mẫu Theo Công Ty & Ngày Lấy</h3>
+                </div>
+
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-xs font-semibold text-slate-600 mb-1 block">Chọn Công ty</label>
+                        <select id="exp2Company" class="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                            <option value="ALL">-- Tất cả công ty --</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-xs font-semibold text-slate-600 mb-1 block">Từ ngày lấy mẫu</label>
+                            <input type="date" id="exp2StartDate" class="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-slate-600 mb-1 block">Đến ngày lấy mẫu</label>
+                            <input type="date" id="exp2EndDate" class="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="executeExportType2()" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 px-4 rounded-xl shadow-md flex items-center justify-center gap-2 transition active:scale-98">
+                    <i class="fa-solid fa-file-excel text-lg"></i>
+                    <span>Tải Báo Cáo Danh Sách Mẫu (.CSV)</span>
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-40 shadow-lg">
+        <div class="max-w-md mx-auto grid grid-cols-3 text-center">
+            <button onclick="switchMainTab(1)" id="navBtn1" class="py-2.5 px-1 flex flex-col items-center justify-center gap-1 text-brand-600 font-semibold transition">
+                <i class="fa-solid fa-calendar-days text-xl"></i>
+                <span class="text-[11px]">Lịch & Lấy mẫu</span>
+            </button>
+
+            <button onclick="switchMainTab(2)" id="navBtn2" class="py-2.5 px-1 flex flex-col items-center justify-center gap-1 text-slate-500 font-medium transition">
+                <i class="fa-solid fa-list-check text-xl"></i>
+                <span class="text-[11px]">Quản lý & Lịch nén</span>
+            </button>
+
+            <button onclick="switchMainTab(3)" id="navBtn3" class="py-2.5 px-1 flex flex-col items-center justify-center gap-1 text-slate-500 font-medium transition">
+                <i class="fa-solid fa-file-export text-xl"></i>
+                <span class="text-[11px]">Xuất file CSV</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- MODAL 1: ADD / EDIT SAMPLE -->
+    <div id="sampleModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 hidden">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="bg-brand-600 text-white px-5 py-3.5 flex items-center justify-between">
+                <h3 id="sampleModalTitle" class="font-bold text-base">Thêm Mẫu Bê Tông Mới</h3>
+                <button onclick="closeSampleModal()" class="text-white/80 hover:text-white text-xl">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="sampleForm" onsubmit="handleSampleFormSubmit(event)" class="p-5 overflow-y-auto space-y-4">
+                <input type="hidden" id="sampleId">
+
+                <div>
+                    <label class="text-xs font-semibold text-slate-700 mb-1 block">Ngày lấy mẫu <span class="text-red-500">*</span></label>
+                    <input type="date" id="inputTakenDate" required class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+
+                <div>
+                    <label class="text-xs font-semibold text-slate-700 mb-1 block">Công ty <span class="text-red-500">*</span></label>
+                    <div class="flex gap-2">
+                        <select id="inputCompany" required class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                        </select>
+                        <button type="button" onclick="quickAddCompanyPrompt()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 rounded-xl border border-slate-300 text-sm font-semibold flex items-center gap-1 shrink-0">
+                            <i class="fa-solid fa-plus"></i> Thêm
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs font-semibold text-slate-700 mb-1 block">Hạng mục <span class="text-red-500">*</span></label>
+                        <input type="text" id="inputCategory" placeholder="VD: Móng, Cột..." required class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-slate-700 mb-1 block">Vị trí <span class="text-red-500">*</span></label>
+                        <input type="text" id="inputLocation" placeholder="VD: Trục A1, Tầng 2..." required class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs font-semibold text-slate-700 mb-1 block">Mác bê tông <span class="text-red-500">*</span></label>
+                        <select id="inputGrade" required class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-slate-700 mb-1 block">Trạng thái gom</label>
+                        <select id="inputCollectedStatus" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                            <option value="CHUA_GOM">Chưa gom</option>
+                            <option value="DA_GOM">Đã gom</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-xs font-semibold text-slate-700 mb-1 block">Ghi chú</label>
+                    <textarea id="inputNote" rows="2" placeholder="Ghi chú thêm..." class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-brand-500 outline-none"></textarea>
+                </div>
+
+                <div class="pt-2 flex gap-3">
+                    <button type="button" onclick="closeSampleModal()" class="w-1/2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2.5 rounded-xl transition">
+                        Hủy
+                    </button>
+                    <button type="submit" class="w-1/2 bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 rounded-xl shadow-md transition">
+                        Lưu Mẫu
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: MASTER DATA -->
+    <div id="masterDataModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 hidden">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+            <div class="bg-slate-800 text-white px-5 py-3.5 flex items-center justify-between">
+                <h3 class="font-bold text-base">Quản Lý Công Ty & Mác Bê Tông</h3>
+                <button onclick="toggleMasterDataModal()" class="text-white/80 hover:text-white text-xl">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="p-4 overflow-y-auto space-y-5">
+                <div class="space-y-2">
+                    <h4 class="font-bold text-sm text-slate-800 border-b pb-1">Danh Sách Công Ty</h4>
+                    <div class="flex gap-2">
+                        <input type="text" id="newCompanyName" placeholder="Tên công ty mới..." class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2 outline-none">
+                        <button onclick="addNewCompany()" class="bg-brand-600 hover:bg-brand-700 text-white font-semibold px-3 text-xs rounded-xl shrink-0">
+                            Thêm
+                        </button>
+                    </div>
+                    <ul id="companyListUI" class="divide-y divide-slate-100 max-h-36 overflow-y-auto text-sm"></ul>
+                </div>
+
+                <div class="space-y-2">
+                    <h4 class="font-bold text-sm text-slate-800 border-b pb-1">Danh Sách Mác Bê Tông</h4>
+                    <div class="flex gap-2">
+                        <input type="text" id="newGradeName" placeholder="Mác mới (VD: M500)..." class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2 outline-none">
+                        <button onclick="addNewGrade()" class="bg-brand-600 hover:bg-brand-700 text-white font-semibold px-3 text-xs rounded-xl shrink-0">
+                            Thêm
+                        </button>
+                    </div>
+                    <ul id="gradeListUI" class="divide-y divide-slate-100 max-h-36 overflow-y-auto text-sm"></ul>
+                </div>
+            </div>
+
+            <div class="p-3 bg-slate-50 border-t border-slate-100 text-right">
+                <button onclick="toggleMasterDataModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-semibold px-4 py-2 rounded-xl">
+                    Đóng
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toastMessage" class="fixed top-5 right-5 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl z-50 text-sm font-medium transform transition-all duration-300 translate-y-[-100px] opacity-0 pointer-events-none flex items-center gap-2">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="toastText">Thông báo!</span>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'CONCRETE_SAMPLES_APP_DATA_V1';
+
+        const DEFAULT_COMPANIES = ['Công ty Coteccons', 'Công ty Hòa Bình', 'Công ty An Phong', 'Công ty Ricons'];
+        const DEFAULT_GRADES = ['M150', 'M200', 'M250', 'M300', 'M350', 'M400', 'M450'];
+
+        let appData = {
+            companies: [...DEFAULT_COMPANIES],
+            grades: [...DEFAULT_GRADES],
+            samples: []
+        };
+
+        const now = new Date();
+        let currentYear = now.getFullYear();
+        let currentMonth = now.getMonth();
+        let selectedDateStr = now.toISOString().split('T')[0];
+        let currentDayTab = 'taken';
+        let currentMainTab = 1;
+        let currentPage2SubTab = 'samples';
+
+        let p2SamplesLimit = 10;
+        let p2SchedulesLimit = 10;
+
+        function getTodayStr() {
+            return new Date().toISOString().split('T')[0];
+        }
+
+        function getCompressionStatus(targetDateStr, currentCompressStatus) {
+            if (currentCompressStatus === 'DA_NEN') {
+                return 'DA_NEN';
+            }
+            const todayStr = getTodayStr();
+            if (todayStr > targetDateStr) {
+                return 'QUA_HAN';
+            }
+            return 'CHUA_NEN';
+        }
+
+        function isFinishedMoreThan7Days(sample) {
+            if (sample.r28CompressStatus !== 'DA_NEN') return false;
+            const today = new Date(getTodayStr());
+            const r28Date = new Date(sample.r28Date);
+            const diffDays = Math.floor((today - r28Date) / (1000 * 60 * 60 * 24));
+            return diffDays > 7;
+        }
+
+        window.onload = function() {
+            loadDataFromStorage();
+
+            const today = getTodayStr();
+            document.getElementById('exp1StartDate').value = today;
+            document.getElementById('exp1EndDate').value = today;
+            document.getElementById('exp2StartDate').value = today;
+            document.getElementById('exp2EndDate').value = today;
+
+            renderAll();
+        };
+
+        function showToast(msg, isError = false) {
+            const toast = document.getElementById('toastMessage');
+            const icon = document.getElementById('toastIcon');
+            const text = document.getElementById('toastText');
+
+            text.innerText = msg;
+            icon.className = isError ? "fa-solid fa-circle-xmark text-red-400" : "fa-solid fa-circle-check text-emerald-400";
+
+            toast.classList.remove('translate-y-[-100px]', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-[-100px]', 'opacity-0');
+                toast.classList.remove('translate-y-0', 'opacity-100');
+            }, 2500);
+        }
+
+        function saveDataToStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+            } catch (e) {
+                console.error("Save error", e);
+            }
+        }
+
+        function loadDataFromStorage() {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (raw) {
+                try {
+                    appData = JSON.parse(raw);
+                } catch (e) {
+                    initEmptyData();
+                }
+            } else {
+                initEmptyData();
+            }
+        }
+
+        function initEmptyData() {
+            appData = {
+                companies: [...DEFAULT_COMPANIES],
+                grades: [...DEFAULT_GRADES],
+                samples: []
+            };
+            saveDataToStorage();
+        }
+
+        function toggleBackupMenu() {
+            document.getElementById('backupMenu').classList.toggle('hidden');
+        }
+
+        window.addEventListener('click', function(e) {
+            const menu = document.getElementById('backupMenu');
+            if (!e.target.closest('#backupMenu') && !e.target.closest('button[onclick="toggleBackupMenu()"]')) {
+                menu.classList.add('hidden');
+            }
+        });
+
+        function exportJSONData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData, null, 2));
+            const anchor = document.createElement('a');
+            anchor.setAttribute("href", dataStr);
+            anchor.setAttribute("download", `Concrete_Samples_${getTodayStr()}.json`);
+            document.body.appendChild(anchor);
+            anchor.click();
+            anchor.remove();
+            showToast("Đã xuất file sao lưu JSON!");
+        }
+
+        function importJSONData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (parsed.samples && Array.isArray(parsed.samples)) {
+                        appData = parsed;
+                        saveDataToStorage();
+                        renderAll();
+                        showToast("Nhập dữ liệu thành công!");
+                    } else {
+                        showToast("Cấu trúc file JSON không hợp lệ!", true);
+                    }
+                } catch (err) {
+                    showToast("Lỗi đọc file JSON!", true);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function switchMainTab(tabNum) {
+            currentMainTab = tabNum;
+            document.getElementById('page1').classList.add('hidden');
+            document.getElementById('page2').classList.add('hidden');
+            document.getElementById('page3').classList.add('hidden');
+
+            for (let i = 1; i <= 3; i++) {
+                document.getElementById(`navBtn${i}`).className = "py-2.5 px-1 flex flex-col items-center justify-center gap-1 text-slate-500 font-medium transition";
+            }
+
+            document.getElementById(`navBtn${tabNum}`).className = "py-2.5 px-1 flex flex-col items-center justify-center gap-1 text-brand-600 font-semibold transition";
+
+            if (tabNum === 1) document.getElementById('page1').classList.remove('hidden');
+            else if (tabNum === 2) {
+                document.getElementById('page2').classList.remove('hidden');
+                renderPage2();
+            } else if (tabNum === 3) {
+                document.getElementById('page3').classList.remove('hidden');
+                populateExportCompanyDropdown();
+            }
+        }
+
+        function addDaysToDateStr(dateStr, days) {
+            const d = new Date(dateStr);
+            d.setDate(d.getDate() + days);
+            return d.toISOString().split('T')[0];
+        }
+
+        function formatDateVN(dateStr) {
+            if (!dateStr) return '';
+            const parts = dateStr.split('-');
+            return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        }
+
+        function getFullDateVNText(dateStr) {
+            const d = new Date(dateStr);
+            const daysOfWeek = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+            return `${daysOfWeek[d.getDay()]}, ${formatDateVN(dateStr)}`;
+        }
+
+        function changeMonth(delta) {
+            currentMonth += delta;
+            if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            } else if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            }
+            renderCalendar();
+        }
+
+        function renderCalendar() {
+            document.getElementById('calendarMonthYear').innerText = `Tháng ${currentMonth + 1}/${currentYear}`;
+            const grid = document.getElementById('calendarGrid');
+            grid.innerHTML = '';
+
+            const firstDay = new Date(currentYear, currentMonth, 1);
+            const lastDay = new Date(currentYear, currentMonth + 1, 0);
+
+            let startDayOfWeek = firstDay.getDay() - 1;
+            if (startDayOfWeek === -1) startDayOfWeek = 6;
+
+            for (let i = 0; i < startDayOfWeek; i++) {
+                grid.appendChild(document.createElement('div'));
+            }
+
+            for (let day = 1; day <= lastDay.getDate(); day++) {
+                const dayString = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                
+                const hasTaken = appData.samples.some(s => s.takenDate === dayString);
+                const hasR7 = appData.samples.some(s => s.r7Date === dayString);
+                const hasR28 = appData.samples.some(s => s.r28Date === dayString);
+
+                const isSelected = (dayString === selectedDateStr);
+
+                const dayCell = document.createElement('div');
+                dayCell.onclick = () => selectCalendarDate(dayString);
+                dayCell.className = `h-11 flex flex-col items-center justify-center rounded-xl cursor-pointer transition relative ${
+                    isSelected ? 'bg-brand-600 text-white font-bold shadow-md' : 'hover:bg-slate-100 text-slate-800 font-medium'
+                }`;
+
+                let html = `<span>${day}</span><div class="flex items-center gap-0.5 mt-0.5">`;
+                if (hasTaken) html += `<span class="w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-emerald-500'}"></span>`;
+                if (hasR7) html += `<span class="w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-yellow-300' : 'bg-amber-500'}"></span>`;
+                if (hasR28) html += `<span class="w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-purple-300' : 'bg-purple-500'}"></span>`;
+                html += `</div>`;
+
+                dayCell.innerHTML = html;
+                grid.appendChild(dayCell);
+            }
+        }
+
+        function selectCalendarDate(dateStr) {
+            selectedDateStr = dateStr;
+            document.getElementById('selectedDateText').innerText = getFullDateVNText(selectedDateStr);
+            document.getElementById('quickExportDateBadge').innerText = formatDateVN(selectedDateStr);
+            renderCalendar();
+            renderSelectedDayActivities();
+        }
+
+        function switchDayTab(tabType) {
+            currentDayTab = tabType;
+            const btn1 = document.getElementById('tabSeg1');
+            const btn2 = document.getElementById('tabSeg2');
+            const content1 = document.getElementById('dayTabTakenContent');
+            const content2 = document.getElementById('dayTabScheduleContent');
+
+            if (tabType === 'taken') {
+                btn1.className = "py-2 px-3 text-xs sm:text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 bg-white text-brand-600 shadow-sm";
+                btn2.className = "py-2 px-3 text-xs sm:text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 text-slate-600 hover:text-slate-900";
+                content1.classList.remove('hidden');
+                content2.classList.add('hidden');
+            } else {
+                btn2.className = "py-2 px-3 text-xs sm:text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 bg-white text-brand-600 shadow-sm";
+                btn1.className = "py-2 px-3 text-xs sm:text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 text-slate-600 hover:text-slate-900";
+                content2.classList.remove('hidden');
+                content1.classList.add('hidden');
+            }
+        }
+
+        function renderSelectedDayActivities() {
+            document.getElementById('selectedDateText').innerText = getFullDateVNText(selectedDateStr);
+            document.getElementById('quickExportDateBadge').innerText = formatDateVN(selectedDateStr);
+
+            const takenSamples = appData.samples.filter(s => s.takenDate === selectedDateStr);
+            document.getElementById('badgeCountTaken').innerText = takenSamples.length;
+
+            const takenContainer = document.getElementById('dayTakenList');
+            if (takenSamples.length === 0) {
+                takenContainer.innerHTML = `<div class="text-center py-6 text-slate-400 italic text-sm">Không có mẫu bê tông nào được lấy vào ngày này.</div>`;
+            } else {
+                const grouped = groupArrayByKey(takenSamples, 'company');
+                let html = '';
+                for (const companyName in grouped) {
+                    html += `
+                        <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
+                            <div class="font-bold text-slate-900 text-sm flex items-center gap-2 border-b border-slate-200/80 pb-1.5">
+                                <i class="fa-solid fa-building text-brand-600"></i> ${companyName}
+                            </div>
+                            <div class="space-y-2">
+                                ${grouped[companyName].map(s => renderSampleItemCard(s)).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+                takenContainer.innerHTML = html;
+            }
+
+            const dueSchedules = [];
+            appData.samples.forEach(s => {
+                if (s.r7Date === selectedDateStr) {
+                    dueSchedules.push({ ...s, type: 'R7', date: s.r7Date, prepStatus: s.r7PrepStatus, compressStatus: s.r7CompressStatus });
+                }
+                if (s.r28Date === selectedDateStr) {
+                    dueSchedules.push({ ...s, type: 'R28', date: s.r28Date, prepStatus: s.r28PrepStatus, compressStatus: s.r28CompressStatus });
+                }
+            });
+
+            document.getElementById('badgeCountSchedule').innerText = dueSchedules.length;
+
+            const schedContainer = document.getElementById('dayScheduleList');
+            if (dueSchedules.length === 0) {
+                schedContainer.innerHTML = `<div class="text-center py-6 text-slate-400 italic text-sm">Không có mẫu bê tông nào tới ngày nén vào ngày này.</div>`;
+            } else {
+                const groupedSched = groupArrayByKey(dueSchedules, 'company');
+                let html = '';
+                for (const companyName in groupedSched) {
+                    html += `
+                        <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
+                            <div class="font-bold text-slate-900 text-sm flex items-center gap-2 border-b border-slate-200/80 pb-1.5">
+                                <i class="fa-solid fa-building text-brand-600"></i> ${companyName}
+                            </div>
+                            <div class="space-y-2">
+                                ${groupedSched[companyName].map(item => renderScheduleItemCard(item)).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+                schedContainer.innerHTML = html;
+            }
+        }
+
+        function renderSampleItemCard(s) {
+            const isCollected = s.collectedStatus === 'DA_GOM';
+            return `
+                <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm space-y-2">
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="space-y-1">
+                            <div class="font-extrabold text-slate-900 text-base">${s.company}</div>
+                            <div class="flex items-center gap-2">
+                                <span class="bg-brand-600 text-white font-bold px-2.5 py-0.5 rounded text-xs">${s.grade}</span>
+                                <span class="text-xs font-semibold text-slate-500">Lấy ngày: ${formatDateVN(s.takenDate)}</span>
+                            </div>
+                            <div class="text-xs font-medium text-slate-700">
+                                <span>${s.category}</span> • <span>Vị trí: ${s.location}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center gap-1 shrink-0">
+                            <button onclick="openEditSampleModal('${s.id}')" class="text-slate-400 hover:text-brand-600 p-1 rounded-lg">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <button onclick="deleteSample('${s.id}')" class="text-slate-400 hover:text-red-600 p-1 rounded-lg">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 text-xs">
+                        <button onclick="toggleCollectedStatus('${s.id}')" class="px-2.5 py-1 rounded-lg font-semibold flex items-center gap-1 transition ${
+                            isCollected ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                        }">
+                            <i class="fa-solid ${isCollected ? 'fa-circle-check' : 'fa-circle-notch'}"></i>
+                            <span>${isCollected ? 'Đã gom' : 'Chưa gom'}</span>
+                        </button>
+
+                        <div class="flex gap-2 text-[11px] text-slate-500">
+                            <span>R7: <strong>${formatDateVN(s.r7Date)}</strong></span>
+                            <span>R28: <strong>${formatDateVN(s.r28Date)}</strong></span>
+                        </div>
+                    </div>
+
+                    ${s.note ? `<div class="text-[11px] text-slate-500 italic bg-slate-50 p-1.5 rounded">Ghi chú: ${s.note}</div>` : ''}
+                </div>
+            `;
+        }
+
+        function renderScheduleItemCard(item) {
+            const isR7 = item.type === 'R7';
+            const isPrep = item.prepStatus === 'DA_CHUAN_BI';
+            
+            const computedStatus = getCompressionStatus(item.date, item.compressStatus);
+            const isCompress = computedStatus === 'DA_NEN';
+            const isOverdue = computedStatus === 'QUA_HAN';
+
+            let statusBadgeClass = 'bg-red-100 text-red-700';
+            let statusBadgeIcon = 'fa-clock';
+            let statusBadgeText = 'Chưa nén';
+
+            if (isCompress) {
+                statusBadgeClass = 'bg-emerald-100 text-emerald-800';
+                statusBadgeIcon = 'fa-circle-check';
+                statusBadgeText = 'Đã nén';
+            } else if (isOverdue) {
+                statusBadgeClass = 'bg-red-600 text-white animate-pulse';
+                statusBadgeIcon = 'fa-triangle-exclamation';
+                statusBadgeText = 'Quá hạn';
+            }
+
+            return `
+                <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm space-y-2">
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="space-y-1">
+                            <div class="font-extrabold text-slate-900 text-base">${item.company}</div>
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold px-2 py-0.5 rounded text-xs text-white ${isR7 ? 'bg-amber-500' : 'bg-purple-600'}">${item.type}</span>
+                                <span class="bg-brand-600 text-white font-bold px-2 py-0.5 rounded text-xs">${item.grade}</span>
+                                <span class="text-xs text-slate-500">Lấy: ${formatDateVN(item.takenDate)}</span>
+                            </div>
+                            <div class="text-xs font-medium text-slate-700">
+                                <span>${item.category}</span> • <span>Vị trí: ${item.location}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100 text-xs">
+                        <button onclick="toggleSchedulePrepStatus('${item.id}', '${item.type}')" class="px-2.5 py-1 rounded-lg font-semibold flex items-center gap-1 transition ${
+                            isPrep ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-600'
+                        }">
+                            <i class="fa-solid ${isPrep ? 'fa-check' : 'fa-hourglass-start'}"></i>
+                            <span>${isPrep ? 'Đã chuẩn bị' : 'Chưa chuẩn bị'}</span>
+                        </button>
+
+                        <button onclick="toggleScheduleCompressStatus('${item.id}', '${item.type}')" class="px-2.5 py-1 rounded-lg font-semibold flex items-center gap-1 transition ${statusBadgeClass}">
+                            <i class="fa-solid ${statusBadgeIcon}"></i>
+                            <span>${statusBadgeText}</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function toggleCollectedStatus(sampleId) {
+            const sample = appData.samples.find(s => s.id === sampleId);
+            if (sample) {
+                sample.collectedStatus = (sample.collectedStatus === 'DA_GOM') ? 'CHUA_GOM' : 'DA_GOM';
+                saveDataToStorage();
+                renderAll();
+            }
+        }
+
+        function toggleSchedulePrepStatus(sampleId, type) {
+            const sample = appData.samples.find(s => s.id === sampleId);
+            if (sample) {
+                if (type === 'R7') {
+                    sample.r7PrepStatus = (sample.r7PrepStatus === 'DA_CHUAN_BI') ? 'CHUA_CHUAN_BI' : 'DA_CHUAN_BI';
+                } else {
+                    sample.r28PrepStatus = (sample.r28PrepStatus === 'DA_CHUAN_BI') ? 'CHUA_CHUAN_BI' : 'DA_CHUAN_BI';
+                }
+                saveDataToStorage();
+                renderAll();
+            }
+        }
+
+        function toggleScheduleCompressStatus(sampleId, type) {
+            const sample = appData.samples.find(s => s.id === sampleId);
+            if (sample) {
+                if (type === 'R7') {
+                    sample.r7CompressStatus = (sample.r7CompressStatus === 'DA_NEN') ? 'CHUA_NEN' : 'DA_NEN';
+                } else {
+                    sample.r28CompressStatus = (sample.r28CompressStatus === 'DA_NEN') ? 'CHUA_NEN' : 'DA_NEN';
+                }
+                saveDataToStorage();
+                renderAll();
+            }
+        }
+
+        function switchPage2SubTab(subType) {
+            currentPage2SubTab = subType;
+            const btn1 = document.getElementById('p2SubTab1');
+            const btn2 = document.getElementById('p2SubTab2');
+            const sec1 = document.getElementById('p2SamplesSection');
+            const sec2 = document.getElementById('p2SchedulesSection');
+
+            if (subType === 'samples') {
+                btn1.className = "pb-2 px-4 font-semibold text-sm border-b-2 border-brand-600 text-brand-600";
+                btn2.className = "pb-2 px-4 font-semibold text-sm text-slate-500 hover:text-slate-700 border-b-2 border-transparent";
+                sec1.classList.remove('hidden');
+                sec2.classList.add('hidden');
+            } else {
+                btn2.className = "pb-2 px-4 font-semibold text-sm border-b-2 border-brand-600 text-brand-600";
+                btn1.className = "pb-2 px-4 font-semibold text-sm text-slate-500 hover:text-slate-700 border-b-2 border-transparent";
+                sec2.classList.remove('hidden');
+                sec1.classList.add('hidden');
+            }
+            renderPage2();
+        }
+
+        function renderPage2() {
+            populateFilterCompanyDropdowns();
+            renderPage2Samples();
+            renderPage2Schedules();
+        }
+
+        function populateFilterCompanyDropdowns() {
+            const select1 = document.getElementById('p2FilterCompany');
+            const select2 = document.getElementById('p2SchedFilterCompany');
+
+            const val1 = select1.value;
+            const val2 = select2.value;
+
+            let html = '<option value="">-- Tất cả Công ty --</option>';
+            appData.companies.forEach(c => {
+                html += `<option value="${c}">${c}</option>`;
+            });
+
+            select1.innerHTML = html;
+            select2.innerHTML = html;
+
+            select1.value = val1;
+            select2.value = val2;
+        }
+
+        function renderPage2Samples() {
+            const companyFilter = document.getElementById('p2FilterCompany').value;
+            const takenDateFilter = document.getElementById('p2FilterTakenDate').value;
+
+            const isFilteringActive = Boolean(companyFilter || takenDateFilter);
+
+            let filtered = [...appData.samples];
+
+            if (!isFilteringActive) {
+                filtered = filtered.filter(s => !isFinishedMoreThan7Days(s));
+            }
+
+            if (companyFilter) filtered = filtered.filter(s => s.company === companyFilter);
+            if (takenDateFilter) filtered = filtered.filter(s => s.takenDate === takenDateFilter);
+
+            filtered.sort((a, b) => new Date(b.takenDate) - new Date(a.takenDate));
+
+            const visibleItems = filtered.slice(0, p2SamplesLimit);
+            const loadMoreBtn = document.getElementById('p2SamplesLoadMore');
+            if (filtered.length > p2SamplesLimit) {
+                loadMoreBtn.classList.remove('hidden');
+            } else {
+                loadMoreBtn.classList.add('hidden');
+            }
+
+            const container = document.getElementById('p2SamplesContainer');
+            if (visibleItems.length === 0) {
+                container.innerHTML = `<div class="bg-white p-6 rounded-2xl text-center text-slate-400 italic shadow-sm">Không tìm thấy mẫu bê tông nào.</div>`;
+                return;
+            }
+
+            const groupedByDate = groupArrayByKey(visibleItems, 'takenDate');
+
+            let html = '';
+            for (const dateKey in groupedByDate) {
+                const dateSamples = groupedByDate[dateKey];
+                const groupedByCompany = groupArrayByKey(dateSamples, 'company');
+
+                html += `
+                    <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 space-y-3">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                            <span class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                                <i class="fa-regular fa-calendar-days text-brand-600"></i> Ngày lấy: ${formatDateVN(dateKey)}
+                            </span>
+                            <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium">${dateSamples.length} mẫu</span>
+                        </div>
+                        <div class="space-y-3">
+                `;
+
+                for (const companyKey in groupedByCompany) {
+                    html += `
+                        <div class="bg-slate-50/80 rounded-xl p-3 border border-slate-200/60 space-y-2">
+                            <div class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                                <i class="fa-solid fa-building text-brand-500"></i> ${companyKey}
+                            </div>
+                            <div class="space-y-2">
+                                ${groupedByCompany[companyKey].map(s => renderSampleItemCard(s)).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                html += `
+                        </div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+        }
+
+        function loadMoreP2Samples() {
+            p2SamplesLimit += 10;
+            renderPage2Samples();
+        }
+
+        function renderPage2Schedules() {
+            const companyFilter = document.getElementById('p2SchedFilterCompany').value;
+            const compressDateFilter = document.getElementById('p2SchedFilterCompressDate').value;
+            const takenDateFilter = document.getElementById('p2SchedFilterTakenDate').value;
+
+            const isFilteringActive = Boolean(companyFilter || compressDateFilter || takenDateFilter);
+
+            let allSchedules = [];
+            appData.samples.forEach(s => {
+                if (!isFilteringActive && isFinishedMoreThan7Days(s)) return;
+
+                allSchedules.push({ ...s, type: 'R7', date: s.r7Date, prepStatus: s.r7PrepStatus, compressStatus: s.r7CompressStatus });
+                allSchedules.push({ ...s, type: 'R28', date: s.r28Date, prepStatus: s.r28PrepStatus, compressStatus: s.r28CompressStatus });
+            });
+
+            if (companyFilter) allSchedules = allSchedules.filter(item => item.company === companyFilter);
+            if (compressDateFilter) allSchedules = allSchedules.filter(item => item.date === compressDateFilter);
+            if (takenDateFilter) allSchedules = allSchedules.filter(item => item.takenDate === takenDateFilter);
+
+            allSchedules.sort((a, b) => {
+                const statusA = getCompressionStatus(a.date, a.compressStatus);
+                const statusB = getCompressionStatus(b.date, b.compressStatus);
+
+                if (statusA === 'QUA_HAN' && statusB !== 'QUA_HAN') return -1;
+                if (statusA !== 'QUA_HAN' && statusB === 'QUA_HAN') return 1;
+
+                return new Date(a.date) - new Date(b.date);
+            });
+
+            const visibleItems = allSchedules.slice(0, p2SchedulesLimit);
+            const loadMoreBtn = document.getElementById('p2SchedulesLoadMore');
+            if (allSchedules.length > p2SchedulesLimit) {
+                loadMoreBtn.classList.remove('hidden');
+            } else {
+                loadMoreBtn.classList.add('hidden');
+            }
+
+            const container = document.getElementById('p2SchedulesContainer');
+            if (visibleItems.length === 0) {
+                container.innerHTML = `<div class="bg-white p-6 rounded-2xl text-center text-slate-400 italic shadow-sm">Không tìm thấy lịch nén nào.</div>`;
+                return;
+            }
+
+            const groupedByDate = groupArrayByKey(visibleItems, 'date');
+
+            let html = '';
+            for (const dateKey in groupedByDate) {
+                const dateItems = groupedByDate[dateKey];
+                const groupedByCompany = groupArrayByKey(dateItems, 'company');
+
+                html += `
+                    <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 space-y-3">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                            <span class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                                <i class="fa-solid fa-calendar-check text-amber-500"></i> Ngày nén: ${formatDateVN(dateKey)}
+                            </span>
+                            <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium">${dateItems.length} đợt</span>
+                        </div>
+                        <div class="space-y-3">
+                `;
+
+                for (const companyKey in groupedByCompany) {
+                    html += `
+                        <div class="bg-slate-50/80 rounded-xl p-3 border border-slate-200/60 space-y-2">
+                            <div class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                                <i class="fa-solid fa-building text-brand-500"></i> ${companyKey}
+                            </div>
+                            <div class="space-y-2">
+                                ${groupedByCompany[companyKey].map(item => renderScheduleItemCard(item)).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                html += `
+                        </div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+        }
+
+        function loadMoreP2Schedules() {
+            p2SchedulesLimit += 10;
+            renderPage2Schedules();
+        }
+
+        function populateModalDropdowns() {
+            const compSelect = document.getElementById('inputCompany');
+            const gradeSelect = document.getElementById('inputGrade');
+
+            compSelect.innerHTML = appData.companies.map(c => `<option value="${c}">${c}</option>`).join('');
+            gradeSelect.innerHTML = appData.grades.map(g => `<option value="${g}">${g}</option>`).join('');
+        }
+
+        function openAddSampleModal() {
+            populateModalDropdowns();
+            document.getElementById('sampleModalTitle').innerText = 'Thêm Mẫu Bê Tông Mới';
+            document.getElementById('sampleId').value = '';
+            document.getElementById('inputTakenDate').value = selectedDateStr;
+            document.getElementById('inputCategory').value = '';
+            document.getElementById('inputLocation').value = '';
+            document.getElementById('inputNote').value = '';
+            document.getElementById('inputCollectedStatus').value = 'CHUA_GOM';
+
+            document.getElementById('sampleModal').classList.remove('hidden');
+        }
+
+        function openEditSampleModal(sampleId) {
+            const sample = appData.samples.find(s => s.id === sampleId);
+            if (!sample) return;
+
+            populateModalDropdowns();
+            document.getElementById('sampleModalTitle').innerText = 'Chỉnh Sửa Mẫu Bê Tông';
+            document.getElementById('sampleId').value = sample.id;
+            document.getElementById('inputTakenDate').value = sample.takenDate;
+            document.getElementById('inputCompany').value = sample.company;
+            document.getElementById('inputCategory').value = sample.category;
+            document.getElementById('inputLocation').value = sample.location;
+            document.getElementById('inputGrade').value = sample.grade;
+            document.getElementById('inputCollectedStatus').value = sample.collectedStatus;
+            document.getElementById('inputNote').value = sample.note || '';
+
+            document.getElementById('sampleModal').classList.remove('hidden');
+        }
+
+        function closeSampleModal() {
+            document.getElementById('sampleModal').classList.add('hidden');
+        }
+
+        function quickAddCompanyPrompt() {
+            const name = prompt("Nhập tên công ty mới:");
+            if (name && name.trim()) {
+                const trimmed = name.trim();
+                if (!appData.companies.includes(trimmed)) {
+                    appData.companies.push(trimmed);
+                    saveDataToStorage();
+                    populateModalDropdowns();
+                    document.getElementById('inputCompany').value = trimmed;
+                }
+            }
+        }
+
+        function handleSampleFormSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('sampleId').value;
+            const takenDate = document.getElementById('inputTakenDate').value;
+            const company = document.getElementById('inputCompany').value;
+            const category = document.getElementById('inputCategory').value;
+            const location = document.getElementById('inputLocation').value;
+            const grade = document.getElementById('inputGrade').value;
+            const collectedStatus = document.getElementById('inputCollectedStatus').value;
+            const note = document.getElementById('inputNote').value;
+
+            const r7Date = addDaysToDateStr(takenDate, 7);
+            const r28Date = addDaysToDateStr(takenDate, 28);
+
+            if (id) {
+                const index = appData.samples.findIndex(s => s.id === id);
+                if (index !== -1) {
+                    const old = appData.samples[index];
+                    appData.samples[index] = {
+                        ...old,
+                        takenDate,
+                        company,
+                        category,
+                        location,
+                        grade,
+                        collectedStatus,
+                        note,
+                        r7Date,
+                        r28Date
+                    };
+                    showToast("Đã cập nhật thông tin mẫu!");
+                }
+            } else {
+                const newSample = {
+                    id: 'samp_' + Date.now(),
+                    takenDate,
+                    company,
+                    category,
+                    location,
+                    grade,
+                    collectedStatus,
+                    note,
+                    r7Date,
+                    r7PrepStatus: 'CHUA_CHUAN_BI',
+                    r7CompressStatus: 'CHUA_NEN',
+                    r28Date,
+                    r28PrepStatus: 'CHUA_CHUAN_BI',
+                    r28CompressStatus: 'CHUA_NEN'
+                };
+                appData.samples.push(newSample);
+                showToast("Đã thêm mẫu mới!");
+            }
+
+            saveDataToStorage();
+            closeSampleModal();
+            renderAll();
+        }
+
+        function deleteSample(sampleId) {
+            if (confirm("Xóa mẫu này và tất cả lịch nén tương ứng?")) {
+                appData.samples = appData.samples.filter(s => s.id !== sampleId);
+                saveDataToStorage();
+                renderAll();
+                showToast("Đã xóa mẫu!");
+            }
+        }
+
+        function toggleMasterDataModal() {
+            const modal = document.getElementById('masterDataModal');
+            modal.classList.toggle('hidden');
+            if (!modal.classList.contains('hidden')) {
+                renderMasterDataUI();
+            }
+        }
+
+        function renderMasterDataUI() {
+            const compList = document.getElementById('companyListUI');
+            const gradeList = document.getElementById('gradeListUI');
+
+            compList.innerHTML = appData.companies.map((c, i) => `
+                <li class="py-2 flex items-center justify-between">
+                    <span>${c}</span>
+                    <button onclick="deleteCompany(${i})" class="text-red-500 hover:text-red-700 px-2 py-1"><i class="fa-solid fa-trash text-xs"></i></button>
+                </li>
+            `).join('');
+
+            gradeList.innerHTML = appData.grades.map((g, i) => `
+                <li class="py-2 flex items-center justify-between">
+                    <span>${g}</span>
+                    <button onclick="deleteGrade(${i})" class="text-red-500 hover:text-red-700 px-2 py-1"><i class="fa-solid fa-trash text-xs"></i></button>
+                </li>
+            `).join('');
+        }
+
+        function addNewCompany() {
+            const input = document.getElementById('newCompanyName');
+            const val = input.value.trim();
+            if (val && !appData.companies.includes(val)) {
+                appData.companies.push(val);
+                input.value = '';
+                saveDataToStorage();
+                renderMasterDataUI();
+            }
+        }
+
+        function deleteCompany(index) {
+            if (confirm("Xóa công ty này?")) {
+                appData.companies.splice(index, 1);
+                saveDataToStorage();
+                renderMasterDataUI();
+            }
+        }
+
+        function addNewGrade() {
+            const input = document.getElementById('newGradeName');
+            const val = input.value.trim();
+            if (val && !appData.grades.includes(val)) {
+                appData.grades.push(val);
+                input.value = '';
+                saveDataToStorage();
+                renderMasterDataUI();
+            }
+        }
+
+        function deleteGrade(index) {
+            if (confirm("Xóa mác bê tông này?")) {
+                appData.grades.splice(index, 1);
+                saveDataToStorage();
+                renderMasterDataUI();
+            }
+        }
+
+        function populateExportCompanyDropdown() {
+            const select = document.getElementById('exp2Company');
+            let html = '<option value="ALL">-- Tất cả công ty --</option>';
+            appData.companies.forEach(c => {
+                html += `<option value="${c}">${c}</option>`;
+            });
+            select.innerHTML = html;
+        }
+
+        function downloadCSV(csvContent, fileName) {
+            // Include UTF-8 BOM \uFEFF to prevent character encoding issues in Excel
+            const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', fileName);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function exportQuickDayCSV() {
+            executeExportType1(selectedDateStr, selectedDateStr);
+        }
+
+        function executeExportType1(customStart, customEnd) {
+            const startDate = customStart || document.getElementById('exp1StartDate').value;
+            const endDate = customEnd || document.getElementById('exp1EndDate').value;
+
+            if (!startDate || !endDate) {
+                showToast("Vui lòng chọn khoảng thời gian!", true);
+                return;
+            }
+
+            const matched = appData.samples.filter(s => {
+                return (s.r7Date >= startDate && s.r7Date <= endDate) || (s.r28Date >= startDate && s.r28Date <= endDate);
+            });
+
+            if (matched.length === 0) {
+                showToast("Không có dữ liệu lịch nén!", true);
+                return;
+            }
+
+            const isSingleDay = (startDate === endDate);
+            let csv = '';
+            let fileName = '';
+
+            if (isSingleDay) {
+                const dateVN = formatDateVN(startDate);
+                csv = `LỊCH NÉN MẪU NGÀY ${dateVN}\n\n`;
+                fileName = `Lich_Nen_Mau_Ngay_${startDate.split('-').reverse().join('-')}.csv`;
+            } else {
+                csv = `LỊCH NÉN MẪU TỪ NGÀY ${formatDateVN(startDate)} ĐẾN NGÀY ${formatDateVN(endDate)}\n\n`;
+                fileName = `Lich_Nen_Mau_${startDate}_den_${endDate}.csv`;
+            }
+
+            const grouped = groupArrayByKey(matched, 'company');
+
+            for (const companyName in grouped) {
+                csv += `CÔNG TY: ${companyName.toUpperCase()}\n`;
+                csv += `"STT","Ngày Lấy Mẫu","Hạng Mục","Vị Trí","Mác","Ngày Nén R7","Trạng Thái R7","Ngày Nén R28","Trạng Thái R28","Ghi Chú"\n`;
+
+                grouped[companyName].forEach((s, idx) => {
+                    const stt = idx + 1;
+                    
+                    const r7CompStatus = getCompressionStatus(s.r7Date, s.r7CompressStatus);
+                    const r28CompStatus = getCompressionStatus(s.r28Date, s.r28CompressStatus);
+
+                    const r7StatusStr = (r7CompStatus === 'DA_NEN') ? 'Đã nén' : (r7CompStatus === 'QUA_HAN' ? 'Quá hạn' : 'Chưa nén');
+                    const r28StatusStr = (r28CompStatus === 'DA_NEN') ? 'Đã nén' : (r28CompStatus === 'QUA_HAN' ? 'Quá hạn' : 'Chưa nén');
+
+                    const note = (s.note || '').replace(/"/g, '""');
+
+                    csv += `"${stt}","${formatDateVN(s.takenDate)}","${s.category}","${s.location}","${s.grade}","${formatDateVN(s.r7Date)}","${r7StatusStr}","${formatDateVN(s.r28Date)}","${r28StatusStr}","${note}"\n`;
+                });
+
+                csv += `\n`;
+            }
+
+            downloadCSV(csv, fileName);
+            showToast("Đã xuất file CSV!");
+        }
+
+        function executeExportType2() {
+            const company = document.getElementById('exp2Company').value;
+            const startDate = document.getElementById('exp2StartDate').value;
+            const endDate = document.getElementById('exp2EndDate').value;
+
+            if (!startDate || !endDate) {
+                showToast("Vui lòng chọn khoảng thời gian!", true);
+                return;
+            }
+
+            let filtered = appData.samples.filter(s => s.takenDate >= startDate && s.takenDate <= endDate);
+            if (company !== 'ALL') {
+                filtered = filtered.filter(s => s.company === company);
+            }
+
+            if (filtered.length === 0) {
+                showToast("Không có mẫu nào trong khoảng thời gian đã chọn!", true);
+                return;
+            }
+
+            const companyHeaderTitle = (company === 'ALL') ? 'TẤT CẢ CÔNG TY' : company.toUpperCase();
+            let csv = `DANH SÁCH MẪU BÊ TÔNG ${companyHeaderTitle}\n`;
+            csv += `Khoảng thời gian lấy mẫu: Từ ${formatDateVN(startDate)} đến ${formatDateVN(endDate)}\n\n`;
+
+            csv += `"STT","Ngày Lấy Mẫu","Hạng Mục","Vị Trí","Mác","Ngày Nén R7","Trạng Thái R7","Ngày Nén R28","Trạng Thái R28","Ghi Chú"\n`;
+
+            filtered.forEach((s, idx) => {
+                const stt = idx + 1;
+                
+                const r7CompStatus = getCompressionStatus(s.r7Date, s.r7CompressStatus);
+                const r28CompStatus = getCompressionStatus(s.r28Date, s.r28CompressStatus);
+
+                const r7StatusStr = (r7CompStatus === 'DA_NEN') ? 'Đã nén' : (r7CompStatus === 'QUA_HAN' ? 'Quá hạn' : 'Chưa nén');
+                const r28StatusStr = (r28CompStatus === 'DA_NEN') ? 'Đã nén' : (r28CompStatus === 'QUA_HAN' ? 'Quá hạn' : 'Chưa nén');
+
+                const note = (s.note || '').replace(/"/g, '""');
+
+                csv += `"${stt}","${formatDateVN(s.takenDate)}","${s.category}","${s.location}","${s.grade}","${formatDateVN(s.r7Date)}","${r7StatusStr}","${formatDateVN(s.r28Date)}","${r28StatusStr}","${note}"\n`;
+            });
+
+            const fileName = `Danh_Sach_Mau_${company}_${startDate}_${endDate}.csv`;
+            downloadCSV(csv, fileName);
+            showToast("Đã xuất file CSV!");
+        }
+
+        function groupArrayByKey(array, key) {
+            return array.reduce((acc, obj) => {
+                const value = obj[key] || 'Khác';
+                if (!acc[value]) acc[value] = [];
+                acc[value].push(obj);
+                return acc;
+            }, {});
+        }
+
+        function renderAll() {
+            renderCalendar();
+            renderSelectedDayActivities();
+            if (currentMainTab === 2) {
+                renderPage2();
+            }
+        }
+    </script>
+</body>
+</html>
